@@ -1,0 +1,5 @@
+So here is the idea.
+First thing's first there is going to be feature where the dyslexic person would read the paragraph. After reading it, the green words indicate the correct pronounciation, meanwhile the red would indicate the wrong. There are going to be purple words as well that they have skipped. 
+Then red words would be shown, how to pronounce them properly 
+Then the purple ones, they will be pronounced anyhow. 
+The same paragraph will come again. The words that they have skipped earlier (sighted words/ purple words) are now going to be underlined, so that the person won't miss the word next time . 
