@@ -1,8 +1,11 @@
 import React from 'react'
+import SpeechBox from '../components/SpeechBox'
 
 const Home = () => {
   return (
-    <div>Home</div>
+    <div >
+      <SpeechBox/>
+    </div>
   )
 }
 
