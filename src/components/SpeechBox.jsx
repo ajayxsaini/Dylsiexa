@@ -6,11 +6,7 @@ const SpeechBox = () => {
       <div className='bg-white cursor-alias'>
         <input type="text"/>
         <label htmlFor=""></label>
-      </div>
-      <div>
-        <div>
-          <button>Generate</button>
-        </div>
+
       </div>
     </div>
     
