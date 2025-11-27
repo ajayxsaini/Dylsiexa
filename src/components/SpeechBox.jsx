@@ -7,7 +7,13 @@ const SpeechBox = () => {
         <input type="text"/>
         <label htmlFor=""></label>
       </div>
+      <div>
+        <div>
+          <button>Generate</button>
+        </div>
+      </div>
     </div>
+    
   )
 }
 
