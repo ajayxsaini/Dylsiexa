@@ -1,37 +1,59 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from "react";
 
 const SpeechBox = () => {
+  const [active, setActive] = useState(true);
+  const [words, setWords] = useState([]);
 
-  const[active, setActive] = useState(true)
+  useEffect(() => {
+    const fetchParagraph = async () => {
+      try {
+        const id = Math.floor(Math.random() * 30) + 1;
+        const res = await fetch(`https://dummyjson.com/posts/${id}`);
+        const data = await res.json();
 
-  const text = "Hi, now this is how we do it and if the text will increase then what will happen.ddddd ddddddddd dddd dddddd dddd ddd ddd ddd ddd ddd dddd ddddd dddddd ddddd dddd dddd ddd ddd ddd ddd dd ddd dddddd";
+        const splitWords = data.body
+          .replace(/\n/g, " ")
+          .trim()
+          .split(/\s+/);
 
-  // Split the text into words
-  const words = text.split(" ");
+        setWords(splitWords);
+      } catch (error) {
+        console.error("Error fetching:", error);
+      }
+    };
+
+    fetchParagraph(); // ✅ CALL THE FUNCTION
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center w-screen bg-amber-50 h-[50vh]">
-      <div className="bg-blue-900 w-2xl p-4 wrap-break-word">
-        <div className="flex flex-wrap gap-2">
-          {words.map((word, index) => (
-            <span key={index} className="text-white word">
-              {word}
-            </span>
-          ))}
-        </div>
+    <div className="flex flex-col items-center justify-center w-screen bg-amber-50 h-[80vh]">
+      <div className="bg-white max-w-2xl w-full p-4 wrap-break-word">
+        {words.length === 0 ? (
+          <p className="text-black">Loading...</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {words.map((word, index) => (
+              <span key={index} className="text-black">
+                {word}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
-      <div className='flex gap-5 mt-2'>
-        <div onClick={() => setActive(!active)} className={`rounded-full text-white  ${active ? "bg-green-600 hover:bg-green-700" 
-                 : "bg-red-600 hover:bg-red-700"}`}>
-          <button className=' p-4 '>
-            {active ? "Speak" : "Stop"}
-          </button>
-        </div>
-        <div className='bg-purple-400 rounded-full text-white'>
-          <button className='p-4'>
-            Next 
-          </button>
-        </div>
+
+      <div className="flex gap-5 mt-4">
+        <button
+          onClick={() => setActive(!active)}
+          className={`rounded-full text-white px-6 py-4 cursor-pointer transition
+            ${active ? "bg-green-600 hover:bg-green-700"
+                     : "bg-red-600 hover:bg-red-700"}`}
+        >
+          {active ? "Speak" : "Stop"}
+        </button>
+
+        <button className="bg-purple-500 hover:bg-purple-600 rounded-full text-white px-6 py-4 cursor-pointer transition">
+          Next
+        </button>
       </div>
     </div>
   );
