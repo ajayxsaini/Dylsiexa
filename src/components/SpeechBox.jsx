@@ -4,26 +4,30 @@ const SpeechBox = () => {
   const [active, setActive] = useState(true);
   const [words, setWords] = useState([]);
 
-  useEffect(() => {
-    const fetchParagraph = async () => {
-      try {
-        const id = Math.floor(Math.random() * 30) + 1;
-        const res = await fetch(`https://dummyjson.com/posts/${id}`);
-        const data = await res.json();
+  
+const fetchParagraph = async () => {
+  try {
+    const id = Math.floor(Math.random() * 30) + 1;
+    const res = await fetch(`https://dummyjson.com/posts/${id}`);
+    const data = await res.json();
 
-        const splitWords = data.body
-          .replace(/\n/g, " ")
-          .trim()
-          .split(/\s+/);
+    const splitWords = data.body
+      .replace(/\n/g, " ")
+      .trim()
+      .split(/\s+/);
 
-        setWords(splitWords);
-      } catch (error) {
-        console.error("Error fetching:", error);
-      }
-    };
+    setWords(splitWords);
+  } catch (error) {
+    console.error("Error fetching:", error);
+  }
+};
 
-    fetchParagraph(); // ✅ CALL THE FUNCTION
+
+useEffect(() => {
+    fetchParagraph();
   }, []);
+
+
 
   return (
     <div className="flex flex-col items-center justify-center w-screen bg-amber-50 h-[80vh]">
@@ -53,6 +57,9 @@ const SpeechBox = () => {
 
         <button className="bg-purple-500 hover:bg-purple-600 rounded-full text-white px-6 py-4 cursor-pointer transition">
           Next
+        </button>
+        <button onClick={fetchParagraph} className="bg-yellow-500 hover:bg-yellow-600 rounded-full text-white px-6 py-4 cursor-pointer transition">
+          Reset
         </button>
       </div>
     </div>
