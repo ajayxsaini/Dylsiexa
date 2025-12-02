@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const SpeechBox = () => {
-  const [active, setActive] = useState(false); // Speak button shows first
+  const [active, setActive] = useState(false);
   const [words, setWords] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [wordStatus, setWordStatus] = useState([]); // pending, correct, wrong, skipped
+  const [wordStatus, setWordStatus] = useState([]);
 
   const recognitionRef = useRef(null);
   const currentIndexRef = useRef(0);
-  const wordsRef = useRef([]); // ✅ Added ref for fast access
+  const wordsRef = useRef([]);
 
-  // -----------------------------
-  // FETCH PARAGRAPH (40+ words)
-  // -----------------------------
+  // ----------------------------------------------------
+  // FETCH PARAGRAPH (safe, prevents undefined body error)
+  // ----------------------------------------------------
   const fetchParagraph = async () => {
     try {
       let valid = false;
@@ -23,6 +23,8 @@ const SpeechBox = () => {
         const res = await fetch(`https://dummyjson.com/posts/${id}`);
         const data = await res.json();
 
+        if (!data.body || typeof data.body !== "string") continue; // FIX 🔥
+
         splitWords = data.body
           .replace(/\n/g, " ")
           .trim()
@@ -32,11 +34,12 @@ const SpeechBox = () => {
       }
 
       setWords(splitWords);
-      wordsRef.current = splitWords; // ✅ sync ref
+      wordsRef.current = splitWords;
       setWordStatus(Array(splitWords.length).fill("pending"));
       setCurrentIndex(0);
       currentIndexRef.current = 0;
-      setActive(false); // Do not auto-start
+      setActive(false);
+
     } catch (error) {
       console.error("Fetch error:", error);
     }
@@ -46,15 +49,15 @@ const SpeechBox = () => {
     fetchParagraph();
   }, []);
 
-  // -----------------------------
-  // SPEECH RECOGNITION SETUP (FAST)
-  // -----------------------------
+  // ----------------------------------------------------
+  // SPEECH RECOGNITION SETUP (fast version)
+  // ----------------------------------------------------
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech Recognition not supported in this browser!");
+      alert("Speech Recognition not supported!");
       return;
     }
 
@@ -81,7 +84,6 @@ const SpeechBox = () => {
       setCurrentIndex(nextIndex);
       currentIndexRef.current = nextIndex;
 
-      // Mark skipped if not spoken after 1.2s
       setTimeout(() => {
         setWordStatus((prev) => {
           const updated = [...prev];
@@ -92,7 +94,9 @@ const SpeechBox = () => {
     };
   }, []);
 
-  // Start or stop listening
+  // ----------------------------------------------------
+  // Start / Stop microphone
+  // ----------------------------------------------------
   useEffect(() => {
     if (!recognitionRef.current) return;
 
@@ -105,14 +109,13 @@ const SpeechBox = () => {
     }
   }, [active]);
 
-  // -----------------------------
-  // UI Rendering
-  // -----------------------------
+  // ----------------------------------------------------
+  // UI
+  // ----------------------------------------------------
   return (
     <div className="flex flex-col items-center justify-center w-screen bg-amber-50 h-[80vh]">
       
-      {/* Paragraph */}
-      <div className="bg-white max-w-2xl w-full p-4 wrap-break-word">
+      <div className="bg-white max-w-2xl w-full p-4 break-words">
         {words.length === 0 ? (
           <p className="text-black">Loading...</p>
         ) : (
@@ -122,11 +125,11 @@ const SpeechBox = () => {
                 key={index}
                 className={
                   wordStatus[index] === "correct"
-                    ? "text-green-400"
+                    ? "text-green-500"
                     : wordStatus[index] === "wrong"
-                    ? "text-red-400"
+                    ? "text-red-500"
                     : wordStatus[index] === "skipped"
-                    ? "text-purple-400"
+                    ? "text-purple-500"
                     : "text-black"
                 }
               >
@@ -137,10 +140,7 @@ const SpeechBox = () => {
         )}
       </div>
 
-      {/* Buttons */}
       <div className="flex gap-5 mt-4">
-        
-        {/* Speak / Stop */}
         <button
           onClick={() => setActive(!active)}
           className={`rounded-full text-white px-6 py-4 cursor-pointer transition
@@ -150,7 +150,6 @@ const SpeechBox = () => {
           {active ? "Stop" : "Speak"}
         </button>
 
-        {/* Reset Paragraph */}
         <button
           onClick={fetchParagraph}
           className="bg-purple-500 hover:bg-purple-600 rounded-full text-white px-6 py-4 cursor-pointer transition"
@@ -158,11 +157,9 @@ const SpeechBox = () => {
           Reset
         </button>
 
-        {/* Next (does nothing for now) */}
         <button className="bg-yellow-500 hover:bg-yellow-700 rounded-full text-white px-6 py-4 cursor-pointer">
           Next
         </button>
-
       </div>
     </div>
   );
