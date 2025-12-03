@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const SpeechBox = () => {
-  const [active, setActive] = useState(false);
   const [words, setWords] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [wordStatus, setWordStatus] = useState([]);
+  const [listening, setListening] = useState(false); 
+  const [spokenWord, setSpokenWord] = useState("");
 
   const recognitionRef = useRef(null);
-  const currentIndexRef = useRef(0);
-  const wordsRef = useRef([]);
 
   // ----------------------------------------------------
-  // FETCH PARAGRAPH (safe, prevents undefined body error)
+  // FETCH PARAGRAPH
   // ----------------------------------------------------
   const fetchParagraph = async () => {
     try {
@@ -23,25 +21,20 @@ const SpeechBox = () => {
         const res = await fetch(`https://dummyjson.com/posts/${id}`);
         const data = await res.json();
 
-        if (!data.body || typeof data.body !== "string") continue; // FIX 🔥
+        if (!data.body || typeof data.body !== "string") continue;
 
-        splitWords = data.body
-          .replace(/\n/g, " ")
-          .trim()
-          .split(/\s+/);
+        splitWords = data.body.replace(/\n/g, " ").trim().split(/\s+/);
 
         if (splitWords.length >= 40) valid = true;
       }
 
       setWords(splitWords);
-      wordsRef.current = splitWords;
-      setWordStatus(Array(splitWords.length).fill("pending"));
       setCurrentIndex(0);
-      currentIndexRef.current = 0;
-      setActive(false);
+      setSpokenWord("");
+      setListening(false);
 
-    } catch (error) {
-      console.error("Fetch error:", error);
+    } catch (err) {
+      console.error("Error fetching paragraph:", err);
     }
   };
 
@@ -50,89 +43,66 @@ const SpeechBox = () => {
   }, []);
 
   // ----------------------------------------------------
-  // SPEECH RECOGNITION SETUP (fast version)
+  // SPEECH RECOGNITION (FAST)
   // ----------------------------------------------------
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech Recognition not supported!");
+      alert("Speech Recognition not supported");
       return;
     }
 
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = true;
-    recognitionRef.current.interimResults = false;
-    recognitionRef.current.lang = "en-US";
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true; 
+    recognition.interimResults = true; 
 
-    recognitionRef.current.onresult = (event) => {
-      const spoken = event.results[event.results.length - 1][0].transcript
-        .trim()
-        .toLowerCase();
-
-      const index = currentIndexRef.current;
-      const target = wordsRef.current[index]?.toLowerCase();
-
-      setWordStatus((prev) => {
-        const updated = [...prev];
-        updated[index] = spoken === target ? "correct" : "wrong";
-        return updated;
-      });
-
-      const nextIndex = index + 1;
-      setCurrentIndex(nextIndex);
-      currentIndexRef.current = nextIndex;
-
-      setTimeout(() => {
-        setWordStatus((prev) => {
-          const updated = [...prev];
-          if (updated[nextIndex] === "pending") updated[nextIndex] = "skipped";
-          return updated;
-        });
-      }, 1200);
+    recognition.onresult = (event) => {
+      const text = event.results[event.results.length - 1][0].transcript;
+      const last = text.trim().toLowerCase().split(" ").pop();
+      setSpokenWord(last);
     };
-  }, []);
 
-  // ----------------------------------------------------
-  // Start / Stop microphone
-  // ----------------------------------------------------
-  useEffect(() => {
-    if (!recognitionRef.current) return;
+    recognitionRef.current = recognition;
 
-    if (!active) {
-      recognitionRef.current.stop();
+    if (listening) {
+      try { recognition.start(); } catch {}
     } else {
-      try {
-        recognitionRef.current.start();
-      } catch {}
+      recognition.stop();
     }
-  }, [active]);
+
+    return () => recognition.stop();
+  }, [listening]);
+
+  // ----------------------------------------------------
+  // COLOR LOGIC
+  // ----------------------------------------------------
+  const getColor = (i) => {
+    if (i !== currentIndex) return "black";
+
+    const expected = words[currentIndex]?.toLowerCase();
+
+    if (!spokenWord) return "black";
+
+    return spokenWord === expected ? "green" : "red";
+  };
 
   // ----------------------------------------------------
   // UI
   // ----------------------------------------------------
   return (
     <div className="flex flex-col items-center justify-center w-screen bg-amber-50 h-[80vh]">
-      
-      <div className="bg-white max-w-2xl w-full p-4 break-words">
+
+      {/* Paragraph */}
+      <div className="bg-white max-w-2xl w-full p-4 wrap-break-word rounded">
         {words.length === 0 ? (
           <p className="text-black">Loading...</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 text-xl">
             {words.map((word, index) => (
-              <span
-                key={index}
-                className={
-                  wordStatus[index] === "correct"
-                    ? "text-green-500"
-                    : wordStatus[index] === "wrong"
-                    ? "text-red-500"
-                    : wordStatus[index] === "skipped"
-                    ? "text-purple-500"
-                    : "text-black"
-                }
-              >
+              <span key={index} style={{ color: getColor(index) }}>
                 {word}
               </span>
             ))}
@@ -140,27 +110,39 @@ const SpeechBox = () => {
         )}
       </div>
 
+      {/* Buttons */}
       <div className="flex gap-5 mt-4">
+
+        {/* SINGLE TOGGLE BUTTON */}
         <button
-          onClick={() => setActive(!active)}
+          onClick={() => setListening((prev) => !prev)}
           className={`rounded-full text-white px-6 py-4 cursor-pointer transition
-            ${active ? "bg-red-600 hover:bg-red-700"
-                     : "bg-green-600 hover:bg-green-700"}`}
+            ${listening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
         >
-          {active ? "Stop" : "Speak"}
+          {listening ? "Stop" : "Speak"}
         </button>
 
+        {/* NEXT */}
+        <button
+          onClick={() => {
+            setCurrentIndex((i) => i + 1);
+            setSpokenWord("");
+          }}
+          className="bg-yellow-500 hover:bg-yellow-600 rounded-full text-white px-6 py-4"
+        >
+          Next
+        </button>
+
+        {/* RESET */}
         <button
           onClick={fetchParagraph}
-          className="bg-purple-500 hover:bg-purple-600 rounded-full text-white px-6 py-4 cursor-pointer transition"
+          className="bg-purple-500 hover:bg-purple-600 rounded-full text-white px-6 py-4"
         >
           Reset
         </button>
 
-        <button className="bg-yellow-500 hover:bg-yellow-700 rounded-full text-white px-6 py-4 cursor-pointer">
-          Next
-        </button>
       </div>
+
     </div>
   );
 };
