@@ -97,10 +97,18 @@ const SpeechBox = () => {
 
       {/* Paragraph */}
       <div className="bg-white max-w-2xl w-full p-4 wrap-break-word rounded">
+        <div className=" ml-auto ">
+          <select name="" id="" >
+            <option value="">Select a Language</option>
+            <option value="english">English</option>
+            <option value="hindi">Hindi</option>
+            <option value="telugu">Telugu</option>
+          </select>
+        </div>
         {words.length === 0 ? (
           <p className="text-black">Loading...</p>
         ) : (
-          <div className="flex flex-wrap gap-2 text-xl">
+          <div className="flex flex-wrap gap-2 text-xl mt-10">
             {words.map((word, index) => (
               <span key={index} style={{ color: getColor(index) }}>
                 {word}
